@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Expense Management{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- Log Expense Card -->
+    <div class="col-lg-4">
+        <div class="card p-4 border-0 bg-white shadow-sm">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-dash-circle text-danger me-2"></i>Log New Expense</h5>
+            <form method="POST" action="{{ url_for('transactions.expenses') }}">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Expense Title / Payee</label>
+                    <input type="text" name="title" class="form-control" placeholder="e.g. Grocery Haul, Bus Pass, Coffee" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Amount ({{ current_user.currency }})</label>
+                    <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Category</label>
+                    <select name="category" class="form-select" required>
+                        {% for cat in expense_categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Expense Classification</label>
+                    <select name="is_essential" class="form-select" required>
+                        <option value="true" selected>Essential Need (Housing, Food, Utilities, Health, Transport)</option>
+                        <option value="false">Discretionary Want (Dining out, Entertainment, Subscriptions, Shopping)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Date</label>
+                    <input type="date" name="date" class="form-control" value="{{ current_year }}-{{ '%02d' % current_month }}-15">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Payment Method</label>
+                    <select name="payment_method" class="form-select">
+                        <option value="Credit / Debit Card" selected>Credit / Debit Card</option>
+                        <option value="Bank Transfer">Bank Transfer / ACH</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Mobile / UPI">Mobile / UPI</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Notes / Receipt Ref</label>
+                    <input type="text" name="notes" class="form-control" placeholder="Optional notes...">
+                </div>
+
+                <button type="submit" class="btn btn-danger w-100 py-2 fw-semibold">
+                    <i class="bi bi-plus-lg me-1"></i> Add Expense
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Expenses History Table & Filter View -->
+    <div class="col-lg-8">
+        <div class="card border-0 bg-white shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pt-3 px-3">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-wallet2 text-danger me-2"></i>Daily & Weekly Expenses</h5>
+                    <div class="d-flex gap-2 align-items-center mt-1 small">
+                        <span>Total: <strong class="text-danger">{{ current_user.currency }}{{ '{:,.2f}'.format(total_expenses) }}</strong></span>
+                        <span class="text-muted">•</span>
+                        <span>Essential: <strong class="text-primary">{{ current_user.currency }}{{ '{:,.2f}'.format(essential_sum) }}</strong></span>
+                        <span class="text-muted">•</span>
+                        <span>Discretionary: <strong class="text-warning">{{ current_user.currency }}{{ '{:,.2f}'.format(discretionary_sum) }}</strong></span>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <form method="GET" class="d-flex gap-2 align-items-center flex-wrap">
+                    <select name="category" class="form-select form-select-sm" onchange="this.form.submit()" style="max-width: 140px;">
+                        <option value="">All Categories</option>
+                        {% for cat in expense_categories %}
+                        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All Months</option>
+                        {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>Month {{ m }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if selected_month or selected_category %}
+                    <a href="{{ url_for('transactions.expenses') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <div class="card-body p-0 mt-2">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Item / Payee</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Classification</th>
+                                <th>Method</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-center pe-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in expenses %}
+                            <tr>
+                                <td class="ps-3 fw-medium text-dark">{{ exp.title }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ exp.category }}</span></td>
+                                <td class="small text-muted">{{ exp.date.strftime('%b %d, %Y') }}</td>
+                                <td>
+                                    {% if exp.is_essential %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Essential</span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Discretionary</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">{{ exp.payment_method }}</td>
+                                <td class="text-end fw-bold text-danger">-{{ current_user.currency }}{{ '{:,.2f}'.format(exp.amount) }}</td>
+                                <td class="text-center pe-3">
+                                    <form method="POST" action="{{ url_for('transactions.delete_expense', id=exp.id) }}" onsubmit="return confirm('Delete this expense entry?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    No expenses logged for this filter.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

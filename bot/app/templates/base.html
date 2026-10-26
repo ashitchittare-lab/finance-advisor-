@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Personal Finance Advisor Bot{% endblock %} | AI Financial Planning</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-light">
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm py-2">
+        <div class="container-fluid px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white" href="{{ url_for('dashboard.index') if current_user.is_authenticated else url_for('auth.login') }}">
+                <div class="brand-icon bg-primary text-white rounded-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-robot fs-5"></i>
+                </div>
+                <span>Personal Finance Advisor <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1 fw-semibold fs-7">AI Bot</span></span>
+            </a>
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                {% if current_user.is_authenticated %}
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-lg-1">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}">
+                            <i class="bi bi-grid-1x2-fill me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'transactions' in request.endpoint %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-arrow-left-right me-1"></i> Transactions
+                        </a>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li><a class="dropdown-item" href="{{ url_for('transactions.income') }}"><i class="bi bi-arrow-down-left-circle-fill text-success me-2"></i>Income Records</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('transactions.expenses') }}"><i class="bi bi-arrow-up-right-circle-fill text-danger me-2"></i>Daily Expenses</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'budget' in request.endpoint %}active{% endif %}" href="{{ url_for('budget.index') }}">
+                            <i class="bi bi-pie-chart-fill me-1"></i> Budget Plan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'goals' in request.endpoint %}active{% endif %}" href="{{ url_for('goals.index') }}">
+                            <i class="bi bi-shield-check me-1"></i> Savings & Emergency
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'advisor' in request.endpoint %}active{% endif %}" href="{{ url_for('advisor.index') }}">
+                            <i class="bi bi-stars text-warning me-1"></i> AI Advisor
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}" href="{{ url_for('reports.index') }}">
+                            <i class="bi bi-file-earmark-bar-graph me-1"></i> Reports
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <!-- Scenario Switcher Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-light dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-people-fill text-info"></i>
+                            <span class="d-none d-md-inline">Scenario Demo:</span>
+                            <span class="badge bg-secondary">{{ personas_config.get(current_user.persona, {}).get('label', current_user.persona) }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li class="dropdown-header">Switch Scenario Demo Persona</li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('auth.demo_login', persona_key='salaried') }}">
+                                    <i class="bi bi-briefcase text-primary"></i> Scenario 1: Salaried Professional (Alex)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('auth.demo_login', persona_key='student') }}">
+                                    <i class="bi bi-mortarboard text-warning"></i> Scenario 2: College Student (Sam)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('auth.demo_login', persona_key='freelancer') }}">
+                                    <i class="bi bi-laptop text-info"></i> Scenario 3: Freelancer (Jordan)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('auth.demo_login', persona_key='household') }}">
+                                    <i class="bi bi-house-heart text-danger"></i> Scenario 4: Household Manager (Morgan)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- User Profile & Settings Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-dark border border-secondary text-white dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                            <div class="avatar-circle">{{ current_user.username[0].upper() }}</div>
+                            <span class="fw-medium">{{ current_user.username }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li class="dropdown-item-text text-muted small">
+                                Role: <strong>{{ personas_config.get(current_user.persona, {}).get('label', current_user.persona) }}</strong>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('settings.index') }}"><i class="bi bi-gear me-2"></i>Settings & Gemini API</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Log Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% else %}
+                <div class="navbar-nav ms-auto gap-2">
+                    <a class="btn btn-sm btn-outline-light" href="{{ url_for('auth.login') }}">Log In</a>
+                    <a class="btn btn-sm btn-primary" href="{{ url_for('auth.register') }}">Create Account</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container-fluid px-lg-4 mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm d-flex align-items-center justify-content-between" role="alert">
+                        <div>
+                            {% if category == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
+                            {% if category == 'danger' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
+                            {% if category == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2"></i>{% endif %}
+                            {% if category == 'info' %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container-fluid px-lg-4 py-3 flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-white border-top">
+        <div class="container-fluid px-lg-4 d-flex flex-wrap justify-content-between align-items-center small text-muted">
+            <div>
+                <span class="fw-semibold text-dark">Personal Finance Advisor Bot</span> &copy; {{ current_year }} | AI-Powered Financial Planning Platform
+            </div>
+            <div>
+                <span class="badge bg-light text-dark border me-2">Mentor: {{ mentor_name }}</span>
+                <span class="badge bg-light text-secondary border">Flask &bull; SQLAlchemy &bull; SQLite &bull; Gemini AI</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

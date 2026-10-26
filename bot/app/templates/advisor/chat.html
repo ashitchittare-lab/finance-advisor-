@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}AI Financial Advisor Bot{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- Chat Interface Main Column -->
+    <div class="col-lg-8">
+        <div class="chat-container">
+            <!-- Chat Header -->
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-top-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="brand-icon bg-primary text-white rounded-3 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-robot fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">Personal Finance Advisor Bot</h6>
+                        <span class="fs-8 text-muted d-flex align-items-center gap-1">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Online</span>
+                            Persona: <strong>{{ personas_config.get(current_user.persona, {}).get('label') }}</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('advisor.clear_history') }}" onsubmit="return confirm('Clear your chat history?');">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Clear History">
+                        <i class="bi bi-trash"></i> Clear
+                    </button>
+                </form>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- Initial Welcome Message from Advisor -->
+                <div class="message-bubble assistant">
+                    <div class="small text-muted mb-1 d-flex align-items-center gap-1">
+                        <i class="bi bi-robot text-primary"></i>
+                        <span class="badge bg-white text-secondary border fs-8">Advisor Welcome</span>
+                    </div>
+                    <div class="message-content">
+                        Hello <strong>{{ current_user.username }}</strong>! 👋 I am your AI-powered Personal Finance Advisor Bot.<br><br>
+                        I have real-time access to your income (<strong>{{ current_user.currency }}{{ '{:,.2f}'.format(context.total_income) }}</strong>), 
+                        current expenses (<strong>{{ current_user.currency }}{{ '{:,.2f}'.format(context.total_expense) }}</strong>), 
+                        and active savings goals.<br><br>
+                        {% if context.overspent_categories %}
+                        ⚠️ <strong>Note:</strong> I noticed overspending in: <em>{{ context.overspent_categories | join(', ') }}</em>. Ask me for a recovery plan!
+                        {% else %}
+                        Great job maintaining budget discipline this cycle!
+                        {% endif %}
+                    </div>
+                    <div class="small text-end mt-1 opacity-75 fs-8">Ready</div>
+                </div>
+
+                <!-- Past History -->
+                {% for msg in history %}
+                <div class="message-bubble {{ msg.sender }}">
+                    {% if msg.sender == 'assistant' %}
+                    <div class="small text-muted mb-1 d-flex align-items-center gap-1">
+                        <i class="bi bi-robot text-primary"></i>
+                        <span class="badge bg-white text-secondary border fs-8">{{ msg.model_used }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="message-content" style="white-space: pre-wrap;">{{ msg.message }}</div>
+                    <div class="small text-end mt-1 opacity-75 fs-8">{{ msg.created_at.strftime('%I:%M %p') }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Suggested Prompt Pills -->
+            <div class="px-3 pt-2 pb-1 bg-white border-top">
+                <div class="text-muted fs-8 fw-semibold mb-1 text-uppercase">Suggested Questions for {{ current_user.persona | title }}:</div>
+                <div class="d-flex gap-2 overflow-auto pb-1" style="white-space: nowrap;">
+                    {% for prompt in quick_prompts %}
+                    <button type="button" class="prompt-pill" data-prompt="{{ prompt }}">{{ prompt }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="chat-input-area">
+                <form id="chatForm" class="d-flex gap-2">
+                    <input type="text" id="messageInput" class="form-control" placeholder="Ask about budgets, overspending, emergency funds, or investments..." autocomplete="off" required>
+                    <button type="submit" id="sendButton" class="btn btn-primary px-3">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Financial Telemetry Sidebar -->
+    <div class="col-lg-4">
+        <div class="card p-3 border-0 bg-white shadow-sm mb-3">
+            <h6 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-cpu text-primary"></i> AI Knowledge Context
+            </h6>
+            <div class="small text-muted mb-3">
+                The AI Advisor analyzes your live financial telemetry on every prompt to generate accurate, non-generic advice:
+            </div>
+
+            <div class="d-flex flex-column gap-2 small">
+                <div class="d-flex justify-content-between p-2 rounded bg-light">
+                    <span class="text-muted">Persona Model</span>
+                    <strong>{{ current_user.persona | title }}</strong>
+                </div>
+                <div class="d-flex justify-content-between p-2 rounded bg-light">
+                    <span class="text-muted">Recorded Income</span>
+                    <strong class="text-success">{{ current_user.currency }}{{ '{:,.2f}'.format(context.total_income) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between p-2 rounded bg-light">
+                    <span class="text-muted">Recorded Expenses</span>
+                    <strong class="text-danger">{{ current_user.currency }}{{ '{:,.2f}'.format(context.total_expense) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between p-2 rounded bg-light">
+                    <span class="text-muted">Net Surplus / Savings</span>
+                    <strong class="{% if context.net_savings >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                        {{ current_user.currency }}{{ '{:,.2f}'.format(context.net_savings) }}
+                    </strong>
+                </div>
+                <div class="d-flex justify-content-between p-2 rounded bg-light">
+                    <span class="text-muted">Current Savings Rate</span>
+                    <strong>{{ context.savings_rate }}%</strong>
+                </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-top">
+                <span class="fw-semibold small d-block mb-1">Overspent Categories:</span>
+                {% if context.overspent_categories %}
+                <ul class="list-unstyled mb-0 small text-danger">
+                    {% for cat in context.overspent_categories %}
+                    <li><i class="bi bi-exclamation-triangle-fill me-1"></i> {{ cat }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle small">None - All Within Limits</span>
+                {% endif %}
+            </div>
+
+            <div class="mt-3 pt-3 border-top">
+                <a href="{{ url_for('settings.index') }}" class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="bi bi-key me-1"></i> Gemini API Settings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

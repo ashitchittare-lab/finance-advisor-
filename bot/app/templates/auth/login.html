@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-5 col-md-8">
+        <div class="card p-4 shadow-sm border-0 mb-4">
+            <div class="text-center mb-4">
+                <div class="brand-icon bg-primary text-white rounded-3 d-inline-flex align-items-center justify-content-center mb-2" style="width: 48px; height: 48px;">
+                    <i class="bi bi-robot fs-3"></i>
+                </div>
+                <h3 class="fw-bold text-dark">Welcome Back</h3>
+                <p class="text-muted small">Log in to your Personal Finance Advisor Bot</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Username or Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-person text-muted"></i></span>
+                        <input type="text" name="identifier" class="form-control" placeholder="e.g. alex_salaried" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-lock text-muted"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="remember" class="form-check-input" id="rememberMe">
+                    <label class="form-check-label small text-muted" for="rememberMe">Remember me on this browser</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Dashboard
+                </button>
+            </form>
+
+            <div class="text-center mt-3">
+                <span class="small text-muted">Don't have an account?</span>
+                <a href="{{ url_for('auth.register') }}" class="small fw-semibold text-primary ms-1">Create one here</a>
+            </div>
+        </div>
+
+        <!-- One-Click Scenario Demo Cards for Instant Evaluation -->
+        <div class="card p-3 border-0 bg-white shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="fw-bold text-secondary mb-0 small text-uppercase tracking-wider">
+                    <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Quick Test: Demo Scenarios
+                </h6>
+                <span class="badge bg-primary-subtle text-primary small">One-Click Login</span>
+            </div>
+            <p class="text-muted small mb-3">Instantly load pre-configured financial profiles matching project requirements:</p>
+
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('auth.demo_login', persona_key='salaried') }}" class="btn btn-outline-primary text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <div class="fw-semibold small"><i class="bi bi-briefcase me-1"></i> Scenario 1: Salaried Professional</div>
+                        <div class="text-muted fs-8">Income $5,500/mo • Rent, Food, Overspent in Entertainment</div>
+                    </div>
+                    <i class="bi bi-arrow-right-short fs-5 text-muted"></i>
+                </a>
+
+                <a href="{{ url_for('auth.demo_login', persona_key='student') }}" class="btn btn-outline-warning text-dark text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <div class="fw-semibold small"><i class="bi bi-mortarboard me-1"></i> Scenario 2: College Student</div>
+                        <div class="text-muted fs-8">Income $850/mo • Allowance, Textbooks, Coffee, Frugal Habits</div>
+                    </div>
+                    <i class="bi bi-arrow-right-short fs-5 text-muted"></i>
+                </a>
+
+                <a href="{{ url_for('auth.demo_login', persona_key='freelancer') }}" class="btn btn-outline-info text-dark text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <div class="fw-semibold small"><i class="bi bi-laptop me-1"></i> Scenario 3: Freelancer / Contractor</div>
+                        <div class="text-muted fs-8">Multi-client earnings • Project gear, 6-Mo Runway Buffer</div>
+                    </div>
+                    <i class="bi bi-arrow-right-short fs-5 text-muted"></i>
+                </a>
+
+                <a href="{{ url_for('auth.demo_login', persona_key='household') }}" class="btn btn-outline-danger text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <div class="fw-semibold small"><i class="bi bi-house-heart me-1"></i> Scenario 4: Household Manager</div>
+                        <div class="text-muted fs-8">Shared family income $7,200 • Groceries, Utilities, Child Education</div>
+                    </div>
+                    <i class="bi bi-arrow-right-short fs-5 text-muted"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

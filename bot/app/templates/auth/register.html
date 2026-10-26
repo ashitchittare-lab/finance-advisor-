@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Create Account{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-6 col-md-8">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="text-center mb-4">
+                <div class="brand-icon bg-primary text-white rounded-3 d-inline-flex align-items-center justify-content-center mb-2" style="width: 48px; height: 48px;">
+                    <i class="bi bi-person-plus fs-3"></i>
+                </div>
+                <h3 class="fw-bold text-dark">Get Started</h3>
+                <p class="text-muted small">Create your account to start AI-driven financial planning</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.register') }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Username</label>
+                        <input type="text" name="username" class="form-control" placeholder="e.g. janesmith" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="e.g. jane@example.com" required>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="Create a secure password" minlength="6" required>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Select Your Financial Persona</label>
+                        <select name="persona" class="form-select" required>
+                            <option value="salaried" selected>Salaried Professional (Regular paycheck, 50/30/20 budget, savings)</option>
+                            <option value="student">College Student (Limited allowance, essential vs discretionary, waste cutting)</option>
+                            <option value="freelancer">Freelancer / Gig Worker (Variable earnings, project costs, emergency buffer)</option>
+                            <option value="household">Household Manager (Shared family income, groceries, utilities, child education)</option>
+                        </select>
+                        <div class="form-text small">Our Gemini AI Advisor will adapt all advice and budget formulas to your persona.</div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold small">Estimated Monthly Base Income</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" name="monthly_income" class="form-control" placeholder="e.g. 5000.00" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Currency Symbol</label>
+                        <input type="text" name="currency" class="form-control text-center" value="$" maxlength="3" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mt-4">
+                    <i class="bi bi-check2-circle me-1"></i> Register & Set Up Profile
+                </button>
+            </form>
+
+            <div class="text-center mt-3">
+                <span class="small text-muted">Already registered?</span>
+                <a href="{{ url_for('auth.login') }}" class="small fw-semibold text-primary ms-1">Sign in here</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Monthly Financial Report{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- Header & Filter -->
+    <div class="col-12 no-print">
+        <div class="card p-4 border-0 bg-white shadow-sm">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h4 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-bar-graph-fill text-primary"></i> Monthly Financial Performance Report
+                    </h4>
+                    <p class="text-muted small mb-0">
+                        Review AI-driven synthesis, financial health score, and strategic action plans for <strong>{{ month }}/{{ year }}</strong>.
+                    </p>
+                </div>
+
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <form method="GET" class="d-flex gap-2">
+                        <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                            {% for m in range(1, 13) %}
+                            <option value="{{ m }}" {% if month == m %}selected{% endif %}>Month {{ m }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="{{ current_year }}" {% if year == current_year %}selected{% endif %}>{{ current_year }}</option>
+                            <option value="{{ current_year - 1 }}" {% if year == current_year - 1 %}selected{% endif %}>{{ current_year - 1 }}</option>
+                        </select>
+                    </form>
+
+                    <form method="POST" action="{{ url_for('reports.save_report') }}">
+                        <input type="hidden" name="month" value="{{ month }}">
+                        <input type="hidden" name="year" value="{{ year }}">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-save me-1"></i> Save Report
+                        </button>
+                    </form>
+
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print / PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Report Body -->
+    <div class="col-12">
+        <div class="card p-4 p-md-5 border-0 bg-white shadow-sm">
+            <!-- Report Title / Brand Header -->
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-4 mb-4 flex-wrap gap-3">
+                <div>
+                    <h3 class="fw-bold text-dark mb-0">Financial Performance Summary</h3>
+                    <div class="text-muted small mt-1">
+                        Report Subject: <strong>{{ current_user.username }}</strong> &bull; Persona: <strong>{{ personas_config.get(current_user.persona, {}).get('label') }}</strong>
+                    </div>
+                </div>
+                <div class="text-md-end">
+                    <span class="badge bg-primary fs-6 px-3 py-2">Period: {{ month }}/{{ year }}</span>
+                    <div class="text-muted fs-8 mt-1">Generated: {{ report.created_at.strftime('%b %d, %Y') if report.created_at else 'Live Review' }}</div>
+                </div>
+            </div>
+
+            <!-- Health Score & Metric Highlights -->
+            <div class="row g-4 align-items-center mb-4">
+                <div class="col-md-3 text-center">
+                    <div class="health-score-circle {% if report.financial_health_score >= 80 %}health-score-excellent{% elif report.financial_health_score >= 60 %}health-score-good{% elif report.financial_health_score >= 40 %}health-score-fair{% else %}health-score-poor{% endif %}">
+                        <span class="fs-2">{{ report.financial_health_score }}</span>
+                        <span class="fs-8 text-uppercase">Score / 100</span>
+                    </div>
+                    <div class="fw-bold mt-2 small text-dark">Financial Health Index</div>
+                </div>
+
+                <div class="col-md-9">
+                    <div class="row g-3">
+                        <div class="col-sm-4">
+                            <div class="p-3 rounded bg-light border">
+                                <span class="text-muted small d-block">Total Revenue</span>
+                                <h4 class="fw-bold text-success mb-0">{{ current_user.currency }}{{ '{:,.2f}'.format(report.total_income) }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-3 rounded bg-light border">
+                                <span class="text-muted small d-block">Total Outflow</span>
+                                <h4 class="fw-bold text-danger mb-0">{{ current_user.currency }}{{ '{:,.2f}'.format(report.total_expense) }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-3 rounded bg-light border">
+                                <span class="text-muted small d-block">Savings Achieved</span>
+                                <h4 class="fw-bold text-primary mb-0">{{ current_user.currency }}{{ '{:,.2f}'.format(report.net_savings) }}</h4>
+                                <span class="fs-8 text-muted">Rate: {{ report.savings_rate }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Executive Summary -->
+            <div class="p-4 rounded-3 bg-light border mb-4">
+                <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                    <i class="bi bi-robot text-primary"></i> AI Executive Synthesis
+                </h5>
+                <p class="text-secondary leading-relaxed mb-0" style="white-space: pre-wrap;">{{ report.ai_summary }}</p>
+            </div>
+
+            <!-- AI Strategic Recommendations -->
+            <div class="p-4 rounded-3 bg-light border mb-4">
+                <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                    <i class="bi bi-compass-fill text-warning"></i> Strategic Next-Month Recommendations
+                </h5>
+                <div class="text-secondary leading-relaxed mb-0" style="white-space: pre-wrap;">{{ report.ai_recommendations }}</div>
+            </div>
+
+            <!-- Category Spending Distribution -->
+            <h5 class="fw-bold text-dark mb-3">Expenditure Distribution</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Category</th>
+                            <th class="text-end">Amount Spent</th>
+                            <th class="text-end">% of Total Expense</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat, amt in report.category_breakdown.items() %}
+                        <tr>
+                            <td class="fw-medium">{{ cat }}</td>
+                            <td class="text-end fw-semibold text-danger">{{ current_user.currency }}{{ '{:,.2f}'.format(amt) }}</td>
+                            <td class="text-end text-muted">
+                                {% if report.total_expense > 0 %}
+                                {{ ((amt / report.total_expense) * 100) | round(1) }}%
+                                {% else %}0.0%{% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No expenses recorded for this reporting period.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Signoff Footer -->
+            <div class="mt-4 pt-4 border-top text-muted small d-flex justify-content-between align-items-center flex-wrap">
+                <div>Personal Finance Advisor Bot &bull; Autonomous AI Financial Planning Platform</div>
+                <div>Mentor: Sai prathyusha Nagilla</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

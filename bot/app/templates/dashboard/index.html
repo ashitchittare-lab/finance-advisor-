@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %}Financial Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+    <!-- Persona Welcome Banner -->
+    <div class="col-12">
+        <div class="card p-4 border-0 bg-white shadow-sm position-relative overflow-hidden">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon-badge bg-primary text-white">
+                        <i class="bi {{ personas_config.get(current_user.persona, {}).get('icon', 'bi-person') }} fs-3"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <h4 class="fw-bold mb-0 text-dark">Welcome, {{ current_user.username }}</h4>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                {{ personas_config.get(current_user.persona, {}).get('label', current_user.persona) }}
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-0 mt-1">
+                            {{ personas_config.get(current_user.persona, {}).get('description') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{ url_for('advisor.index') }}" class="btn btn-outline-primary d-flex align-items-center gap-2">
+                        <i class="bi bi-stars text-warning"></i> Ask AI Advisor
+                    </a>
+                    <a href="{{ url_for('budget.index') }}" class="btn btn-primary d-flex align-items-center gap-2">
+                        <i class="bi bi-pie-chart"></i> View Budget
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overspending Alert (if any categories exceeded budget) -->
+    {% if context.overspent_categories %}
+    <div class="col-12">
+        <div class="alert alert-danger border-danger shadow-sm mb-0 d-flex align-items-start gap-3">
+            <i class="bi bi-exclamation-octagon-fill fs-3 text-danger"></i>
+            <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1 text-danger">Budget Limit Alert: Overspending Detected!</h6>
+                <p class="small mb-2 text-danger-emphasis">
+                    You have exceeded your allocated budget in: 
+                    <strong>{{ context.overspent_categories | join(', ') }}</strong>.
+                </p>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('advisor.index') }}" class="btn btn-sm btn-danger text-white">
+                        <i class="bi bi-robot me-1"></i> Get AI Savings Strategy
+                    </a>
+                    <a href="{{ url_for('budget.index') }}" class="btn btn-sm btn-outline-danger">
+                        Adjust Budget Limits
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 4 KPI Cards -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card bg-white h-100 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase tracking-wider">Total Monthly Income</span>
+                    <h3 class="fw-bold mt-1 mb-0 text-success">{{ current_user.currency }}{{ '{:,.2f}'.format(context.total_income) }}</h3>
+                </div>
+                <div class="kpi-icon-badge bg-success-subtle text-success">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+            <div class="mt-3 small text-muted">
+                <i class="bi bi-calendar-event me-1"></i> Cycle: {{ context.month }}/{{ context.year }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card bg-white h-100 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase tracking-wider">Total Expenses Logged</span>
+                    <h3 class="fw-bold mt-1 mb-0 text-danger">{{ current_user.currency }}{{ '{:,.2f}'.format(context.total_expense) }}</h3>
+                </div>
+                <div class="kpi-icon-badge bg-danger-subtle text-danger">
+                    <i class="bi bi-receipt"></i>
+                </div>
+            </div>
+            <div class="mt-3 small text-muted">
+                <i class="bi bi-tag me-1"></i> Across {{ context.category_spending | length }} categories
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card bg-white h-100 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase tracking-wider">Net Monthly Savings</span>
+                    <h3 class="fw-bold mt-1 mb-0 {% if context.net_savings >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                        {{ current_user.currency }}{{ '{:,.2f}'.format(context.net_savings) }}
+                    </h3>
+                </div>
+                <div class="kpi-icon-badge {% if context.net_savings >= 0 %}bg-primary-subtle text-primary{% else %}bg-danger-subtle text-danger{% endif %}">
+                    <i class="bi bi-piggy-bank"></i>
+                </div>
+            </div>
+            <div class="mt-3 small text-muted">
+                {% if context.net_savings >= 0 %}
+                <span class="text-success fw-medium"><i class="bi bi-arrow-up-right me-1"></i>Surplus capital</span>
+                {% else %}
+                <span class="text-danger fw-medium"><i class="bi bi-arrow-down-right me-1"></i>Deficit warning</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card bg-white h-100 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase tracking-wider">Savings Rate</span>
+                    <h3 class="fw-bold mt-1 mb-0 {% if context.savings_rate >= 20 %}text-success{% elif context.savings_rate >= 10 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ context.savings_rate }}%
+                    </h3>
+                </div>
+                <div class="kpi-icon-badge bg-info-subtle text-info">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+            </div>
+            <div class="mt-3 small text-muted">
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar {% if context.savings_rate >= 20 %}bg-success{% elif context.savings_rate >= 10 %}bg-warning{% else %}bg-danger{% endif %}" 
+                         role="progressbar" style="width: {{ [context.savings_rate, 100] | min }}%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-3">
+    <!-- Category Spending Doughnut Chart -->
+    <div class="col-lg-5">
+        <div class="card p-3 border-0 bg-white shadow-sm h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-pie-chart text-primary me-2"></i>Spending by Category</h6>
+                <a href="{{ url_for('transactions.expenses') }}" class="btn btn-sm btn-link text-decoration-none">View All</a>
+            </div>
+            <div class="position-relative d-flex align-items-center justify-content-center" style="min-height: 280px;">
+                {% if context.category_spending %}
+                <canvas id="categoryChart"></canvas>
+                {% else %}
+                <div class="text-center text-muted p-4">
+                    <i class="bi bi-wallet2 fs-2 d-block mb-2"></i>
+                    No expenses logged yet this cycle.
+                </div>
+                {% endif %}
+            </div>
+            <!-- Essential vs Discretionary Breakdown -->
+            <div class="border-top pt-3 mt-2">
+                <div class="d-flex justify-content-between small text-muted mb-1">
+                    <span>Essential Needs: <strong>{{ current_user.currency }}{{ '{:,.2f}'.format(context.essential_spending) }}</strong></span>
+                    <span>Discretionary Wants: <strong>{{ current_user.currency }}{{ '{:,.2f}'.format(context.discretionary_spending) }}</strong></span>
+                </div>
+                {% set total_exp = context.total_expense if context.total_expense > 0 else 1 %}
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-primary" role="progressbar" 
+                         style="width: {{ (context.essential_spending / total_exp * 100) | round(1) }}%;" 
+                         title="Essential ({{ (context.essential_spending / total_exp * 100) | round(1) }}%)"></div>
+                    <div class="progress-bar bg-warning" role="progressbar" 
+                         style="width: {{ (context.discretionary_spending / total_exp * 100) | round(1) }}%;" 
+                         title="Discretionary ({{ (context.discretionary_spending / total_exp * 100) | round(1) }}%)"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Income vs Expense Trend -->
+    <div class="col-lg-7">
+        <div class="card p-3 border-0 bg-white shadow-sm h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-bar-chart-line text-success me-2"></i>Income vs. Expenses Trend</h6>
+                <a href="{{ url_for('reports.index') }}" class="btn btn-sm btn-link text-decoration-none">Full Reports</a>
+            </div>
+            <div style="min-height: 280px;">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Row: Recent Transactions & Active Goals -->
+<div class="row g-3">
+    <!-- Recent Transactions -->
+    <div class="col-lg-7">
+        <div class="card border-0 bg-white shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-secondary me-2"></i>Recent Spending Activity</h6>
+                <a href="{{ url_for('transactions.expenses') }}" class="btn btn-sm btn-outline-primary">+ Log Expense</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Item</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th class="text-end pe-3">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in recent_expenses %}
+                            <tr>
+                                <td class="ps-3 fw-medium">{{ exp.title }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ exp.category }}</span></td>
+                                <td class="small text-muted">{{ exp.date.strftime('%b %d') }}</td>
+                                <td>
+                                    {% if exp.is_essential %}
+                                    <span class="badge bg-success-subtle text-success">Essential</span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning">Discretionary</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-3 fw-bold text-danger">-{{ current_user.currency }}{{ '{:,.2f}'.format(exp.amount) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No recent expenses found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Savings & Emergency Goals -->
+    <div class="col-lg-5">
+        <div class="card border-0 bg-white shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-shield-check text-info me-2"></i>Savings & Emergency Goals</h6>
+                <a href="{{ url_for('goals.index') }}" class="btn btn-sm btn-outline-info">+ Add Goal</a>
+            </div>
+            <div class="card-body p-3">
+                {% for goal in goals %}
+                <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold small text-dark d-flex align-items-center gap-1">
+                            {% if goal.is_emergency_fund %}
+                            <i class="bi bi-shield-lock-fill text-warning"></i>
+                            {% else %}
+                            <i class="bi bi-flag-fill text-primary"></i>
+                            {% endif %}
+                            {{ goal.title }}
+                        </span>
+                        <span class="badge bg-light text-dark border small">
+                            {{ current_user.currency }}{{ '{:,.0f}'.format(goal.current_amount) }} / {{ current_user.currency }}{{ '{:,.0f}'.format(goal.target_amount) }}
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar {% if goal.progress_percentage >= 100 %}bg-success{% elif goal.is_emergency_fund %}bg-warning{% else %}bg-primary{% endif %}" 
+                             role="progressbar" style="width: {{ goal.progress_percentage }}%;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted fs-8 mt-1">
+                        <span>Progress: {{ goal.progress_percentage }}%</span>
+                        <span>Remaining: {{ current_user.currency }}{{ '{:,.2f}'.format(goal.remaining_amount) }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-bullseye fs-2 d-block mb-2"></i>
+                    No savings goals created yet.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. Doughnut Chart for Categories
+    const categoryData = {{ context.category_spending | tojson }};
+    const catCanvas = document.getElementById('categoryChart');
+    if (catCanvas && Object.keys(categoryData).length > 0) {
+        new Chart(catCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(categoryData),
+                datasets: [{
+                    data: Object.values(categoryData),
+                    backgroundColor: [
+                        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+                        '#8b5cf6', '#06b6d4', '#ec4899', '#64748b',
+                        '#14b8a6', '#f97316', '#a855f7', '#84cc16'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, font: { size: 11 } }
+                    }
+                },
+                cutout: '68%'
+            }
+        });
+    }
+
+    // 2. Bar Chart for Monthly Trend
+    const trendData = {{ monthly_trend | tojson }};
+    const trendCanvas = document.getElementById('trendChart');
+    if (trendCanvas && trendData.length > 0) {
+        new Chart(trendCanvas, {
+            type: 'bar',
+            data: {
+                labels: trendData.map(d => d.label),
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: trendData.map(d => d.income),
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Expenses',
+                        data: trendData.map(d => d.expense),
+                        backgroundColor: '#ef4444',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) { return '{{ current_user.currency }}' + value; }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

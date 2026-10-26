@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Income Management{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- Log Income Card -->
+    <div class="col-lg-4">
+        <div class="card p-4 border-0 bg-white shadow-sm">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-plus-circle text-success me-2"></i>Record Income</h5>
+            <form method="POST" action="{{ url_for('transactions.income') }}">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Source / Client Name</label>
+                    <input type="text" name="source" class="form-control" placeholder="e.g. Acme Corp / Client Apex / Stipend" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Amount ({{ current_user.currency }})</label>
+                    <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Category</label>
+                    <select name="category" class="form-select" required>
+                        {% for cat in income_categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Date Received</label>
+                    <input type="date" name="date" class="form-control" value="{{ current_year }}-{{ '%02d' % current_month }}-01">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Notes / Client Details</label>
+                    <input type="text" name="notes" class="form-control" placeholder="e.g. Milestone 2 invoice / Direct deposit">
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="is_recurring" class="form-check-input" id="isRecurring" checked>
+                    <label class="form-check-label small text-muted" for="isRecurring">Recurring Monthly Income</label>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                    <i class="bi bi-check-circle me-1"></i> Log Income Entry
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Income History Table & Filters -->
+    <div class="col-lg-8">
+        <div class="card border-0 bg-white shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pt-3 px-3">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-arrow-down text-success me-2"></i>Income Records</h5>
+                    <span class="text-muted small">Total Recorded: <strong>{{ current_user.currency }}{{ '{:,.2f}'.format(total_income) }}</strong></span>
+                </div>
+
+                <!-- Filter Form -->
+                <form method="GET" class="d-flex gap-2 align-items-center">
+                    <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All Months</option>
+                        {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>Month {{ m }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All Years</option>
+                        <option value="{{ current_year }}" {% if selected_year == current_year %}selected{% endif %}>{{ current_year }}</option>
+                        <option value="{{ current_year - 1 }}" {% if selected_year == current_year - 1 %}selected{% endif %}>{{ current_year - 1 }}</option>
+                    </select>
+                    {% if selected_month or selected_year %}
+                    <a href="{{ url_for('transactions.income') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <div class="card-body p-0 mt-2">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Source / Client</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Notes</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-center pe-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inc in incomes %}
+                            <tr>
+                                <td class="ps-3 fw-semibold text-dark">
+                                    {{ inc.source }}
+                                    {% if inc.is_recurring %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8 ms-1">Recurring</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ inc.category }}</span></td>
+                                <td class="small text-muted">{{ inc.date.strftime('%b %d, %Y') }}</td>
+                                <td class="small text-muted text-truncate" style="max-width: 150px;">{{ inc.notes or '-' }}</td>
+                                <td class="text-end fw-bold text-success">+{{ current_user.currency }}{{ '{:,.2f}'.format(inc.amount) }}</td>
+                                <td class="text-center pe-3">
+                                    <form method="POST" action="{{ url_for('transactions.delete_income', id=inc.id) }}" onsubmit="return confirm('Remove this income entry?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    No income records found for this selection.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
